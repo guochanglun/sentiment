@@ -1,16 +1,12 @@
 package com.gcl.sentiment;
 
-import java.awt.AWTException;
-import java.awt.Robot;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 import com.huaban.analysis.jieba.JiebaSegmenter;
 import com.huaban.analysis.jieba.JiebaSegmenter.SegMode;
@@ -32,12 +28,18 @@ public class Main {
 		File positiveFile = new File(positiveFileName);
 		File notFile = new File(notFileName);
 		
-		try(BufferedReader negBufferedReader = new BufferedReader(new FileReader(negtiveFile));
+		try{
+			BufferedReader negBufferedReader = new BufferedReader(new FileReader(negtiveFile));
 			BufferedReader posBufferedReader = new BufferedReader(new FileReader(positiveFile));
-			BufferedReader notBufferedReader = new BufferedReader(new FileReader(notFile))){
-			negList = negBufferedReader.lines().filter(line -> line.length() > 0).collect(Collectors.toList());
-			posList = posBufferedReader.lines().filter(line -> line.length() > 0).collect(Collectors.toList());
-			notList = notBufferedReader.lines().filter(line -> line.length() > 0).collect(Collectors.toList());
+			BufferedReader notBufferedReader = new BufferedReader(new FileReader(notFile));
+			
+			negList = getListFromBufferedReader(negBufferedReader);
+			posList = getListFromBufferedReader(posBufferedReader);
+			notList = getListFromBufferedReader(notBufferedReader);
+			
+			negBufferedReader.close();
+			posBufferedReader.close();
+			notBufferedReader.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -52,12 +54,11 @@ public class Main {
 			System.out.print("> ");
 			String sentence = scanner.nextLine();
 			if("end".equals(sentence)) break;
-			if("cls".equals(sentence)) { clear(); continue;}
 			
 			if(classify(sentence)) {
-				System.out.println("情感积极");
+				System.out.println("positive");
 			} else {
-				System.out.println("情感消极");
+				System.out.println("negtive");
 			}
 		}
 		scanner.close();
@@ -103,19 +104,22 @@ public class Main {
 		}
 	}
 	
-	public static void clear() {
-        Robot robot;
+	/**
+	 * read all lines from BufferedReader to list, then return list
+	 */
+	private static List<String> getListFromBufferedReader(BufferedReader reader) {
+		
+		List<String> list = new ArrayList<String>();
+		
 		try {
-			robot = new Robot();
-			robot.mousePress(InputEvent.BUTTON3_MASK);       // 按下鼠标右键
-	        robot.mouseRelease(InputEvent.BUTTON3_MASK);    // 释放鼠标右键
-	        robot.keyPress(KeyEvent.VK_CONTROL);             // 按下Ctrl键
-	        robot.keyPress(KeyEvent.VK_R);                    // 按下R键
-	        robot.keyRelease(KeyEvent.VK_R);                  // 释放R键
-	        robot.keyRelease(KeyEvent.VK_CONTROL);            // 释放Ctrl键
-	        robot.delay(100);       
-		} catch (AWTException e) {
+			String line;
+			while((line = reader.readLine()) != null) {
+				list.add(line);
+			}
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    }
+		
+		return list;
+	}
 }
