@@ -1,10 +1,15 @@
 package com.gcl.sentiment;
 
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import com.huaban.analysis.jieba.JiebaSegmenter;
@@ -42,44 +47,75 @@ public class Main {
 	 * main
 	 */
 	public static void main(String[] args) {
-		String sentence = "今天我很不高兴，太他妈倒霉了,我有点想死的感觉，天都要塌下来了";
-		if(classify(sentence)) {
-			System.out.println("情感积极");
-		} else {
-			System.out.println("情感消极");
+		Scanner scanner = new Scanner(System.in);
+		while(true) {
+			System.out.print("> ");
+			String sentence = scanner.nextLine();
+			if("end".equals(sentence)) break;
+			if("cls".equals(sentence)) { clear(); continue;}
+			
+			if(classify(sentence)) {
+				System.out.println("情感积极");
+			} else {
+				System.out.println("情感消极");
+			}
 		}
+		scanner.close();
 	}	
 	
 	/**
 	 * sentiment classify
 	 */
 	private static boolean classify(String sentence) {
+		System.out.println("--------------------------------------------------");
 		// split words
 		List<SegToken> segTokenList = segmenter.process(sentence, SegMode.INDEX);
-		double positiveScore = 1.0;
-		double negtiveScore = 1.0;
+		double positiveScore = 10E100d;
+		double negtiveScore = 10E100d;
+		
+		String preWord = "";
 		
 		for(SegToken token: segTokenList){
 			String word = token.word;
-			if(word.length() <= 1) continue;
-			
-			if(negList.contains(word)){
+			if((negList.contains(word) && !"".equals(preWord) && !notList.contains(preWord)) || 
+					(posList.contains(word) && !"".equals(preWord) && notList.contains(preWord))) {
 				negtiveScore *= 2.0 / (negList.size() + 1);
-			}else{
+			}else {
 				negtiveScore *= 1.0 / (negList.size() + 1);
 			}
-			if(posList.contains(word)){
+			
+			if((posList.contains(word) && !"".equals(preWord) && !notList.contains(preWord)) || 
+					(negList.contains(word) && !"".equals(preWord) && notList.contains(preWord))) {
 				positiveScore *= 2.0 / (posList.size() + 1);
-			}else{
+			}else {
 				positiveScore *= 1.0 / (posList.size() + 1);
 			}
+			preWord = word;
 		}
 		System.out.println("negtiveScore: " + negtiveScore);
 		System.out.println("positiveScore: " + positiveScore);
+		System.out.println("--------------------------------------------------");
+		
 		if(negtiveScore > positiveScore){
 			return false;
 		}else{
 			return true;
 		}
 	}
+	
+	public static void clear() {
+        Robot robot;
+		try {
+			robot = new Robot();
+			robot.mousePress(InputEvent.BUTTON3_MASK);       // 按下鼠标右键
+	        robot.mouseRelease(InputEvent.BUTTON3_MASK);    // 释放鼠标右键
+	        robot.keyPress(KeyEvent.VK_CONTROL);             // 按下Ctrl键
+	        robot.keyPress(KeyEvent.VK_R);                    // 按下R键
+	        robot.keyRelease(KeyEvent.VK_R);                  // 释放R键
+	        robot.keyRelease(KeyEvent.VK_CONTROL);            // 释放Ctrl键
+	        robot.delay(100);       
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+    }
 }
